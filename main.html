@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta http-equiv="X-UA-Compatible" content="ie=edge" />
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-GLhlTQ8iRABdZLl6O3oVMWSktQOp6b7In1Zl3/Jr59b6EGGoI1aFkw7cmDA6j6gD" crossorigin="anonymous" />
+    <title>Data Table</title>
+  </head>
+  <body>
+    <!-- Navbar -->
+    <nav class="navbar navbar-expand-lg navbar-light shadow-sm fixed-top" style="background-color: #d2cccc">
+      <div class="container">
+        <a class="navbar-brand" href="#"><img src="image/logocti.png" alt="" width="20px" /></a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNavAltMarkup" aria-controls="navbarNavAltMarkup" aria-expanded="false" aria-label="Toggle navigation">
+          <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNavAltMarkup">
+          <div class="navbar-nav ms-auto">
+            <a class="nav-link" href="aboutme.html">About Me</a>
+            <a class="nav-link" href="login.html">Back to Login</a>
+          </div>
+        </div>
+      </div>
+    </nav>
+    <div class="container my-5 pt-5">
+      <h1 class="text-center mb-5">Data</h1>
+      <div class="row">
+        <div class="col-md-6">
+          <input type="text" class="form-control" id="searchInput" placeholder="Search by Name" />
+        </div>
+      </div>
+      <table class="table table-hover mt-3">
+        <thead>
+          <tr>
+            <th>Name</th>
+            <th>Email</th>
+            <th>Phone</th>
+          </tr>
+        </thead>
+        <tbody id="tableBody">
+          <!-- Table Data Goes Here -->
+        </tbody>
+      </table>
+
+      <nav aria-label="Page navigation example">
+        <ul class="pagination justify-content-center">
+          <li class="page-item disabled">
+            <a class="page-link" href="#" tabindex="-1">Previous</a>
+          </li>
+          <li class="page-item active"><a class="page-link" href="#">1</a></li>
+          <li class="page-item">
+            <a class="page-link" href="#">Next</a>
+          </li>
+        </ul>
+      </nav>
+    </div>
+
+    <!-- Items Per Page Control (Not WORK)-->
+    <div class="d-flex justify-content-center my-3">
+      <label for="itemsPerPageControl">Show: (Not Working)</label>
+      <select id="itemsPerPageControl" class="ml-2" onchange="handleItemsPerPageChange()">
+        <option value="5">5</option>
+        <option value="10">10</option>
+        <option value="20">20</option>
+        <option value="50">50</option>
+      </select>
+    </div>
+
+    <!-- Modal -->
+    <div class="modal" id="detailModal">
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="modalTitle"></h5>
+            <button type="button" class="close" data-dismiss="modal">&times;</button>
+          </div>
+          <div class="modal-body" id="modalBody"></div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      // Variables
+      const API_URL = "https://randomuser.me/api/?results=50";
+      const ITEMS_PER_PAGE = 10;
+      const ITEMS_PER_PAGE_OPTIONS = [10, 20, 50];
+      //const ITEMS_PER_PAGE_CONTROL = ITEMS_PER_PAGE_OPTIONS[0];
+      let data = [];
+      let filteredData = [];
+      let currentPage = 1;
+      let totalPages = 1;
+
+      // Fetch Data from API
+      fetch(API_URL)
+        .then((response) => response.json())
+        .then((json) => {
+          data = json.results;
+          filteredData = data;
+          renderTable();
+          renderPagination();
+        });
+
+      // Render Table
+      function renderTable() {
+        let startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+        let endIndex = startIndex + ITEMS_PER_PAGE;
+        let paginatedData = filteredData.slice(startIndex, endIndex);
+
+        let tableBody = document.getElementById("tableBody");
+        tableBody.innerHTML = "";
+
+        paginatedData.forEach((item) => {
+          let row = document.createElement("tr");
+          row.innerHTML = `
+      <td>${item.name.first} ${item.name.last}</td>
+      <td>${item.email}</td>
+      <td>${item.phone}</td>
+    `;
+          row.addEventListener("click", () => {
+            // Redirect to modal
+            showDetailModal(item);
+          });
+          tableBody.appendChild(row);
+        });
+      }
+
+      // Show Detail Modal
+      function showDetailModal(item) {
+        let modal = document.getElementById("detailModal");
+        modal.querySelector("#modalTitle").innerText = `${item.name.first} ${item.name.last}`;
+        modal.querySelector("#modalBody").innerHTML = `
+    <p>Email: ${item.email}</p>
+    <p>Phone: ${item.phone}</p>
+  `;
+        modal.style.display = "block";
+      }
+
+      // Hide Detail Modal
+      let closeModalButton = document.querySelector(".close");
+      closeModalButton.addEventListener("click", () => {
+        document.getElementById("detailModal").style.display = "none";
+      });
+
+      // Hide Detail Modal on Outside Click
+      window.addEventListener("click", (event) => {
+        if (event.target === document.getElementById("detailModal")) {
+          document.getElementById("detailModal").style.display = "none";
+        }
+      });
+
+      // Render Pagination
+      function renderPagination() {
+        let totalPages = Math.ceil(filteredData.length / ITEMS_PER_PAGE);
+        let pagination = document.querySelector(".pagination");
+        pagination.innerHTML = "";
+
+        for (let i = 1; i <= totalPages; i++) {
+          let pageItem = document.createElement("li");
+          pageItem.classList.add("page-item");
+
+          let pageLink = document.createElement("a");
+          pageLink.classList.add("page-link");
+          pageLink.innerText = i;
+          pageLink.addEventListener("click", () => {
+            currentPage = i;
+            renderTable();
+            renderPagination();
+          });
+
+          if (i === currentPage) {
+            pageItem.classList.add("active");
+          }
+
+          pageItem.appendChild(pageLink);
+          pagination.appendChild(pageItem);
+        }
+      }
+
+      // Render Items Per Page Control (NOT WORK)
+      function renderItemsPerPageControl() {
+        let itemsPerPageControl = document.getElementById("itemsPerPageControl");
+        itemsPerPageControl.innerHTML = "";
+
+        ITEMS_PER_PAGE_OPTIONS.forEach((option) => {
+          let optionElement = document.createElement("option");
+          optionElement.value = option;
+          optionElement.innerText = option;
+          itemsPerPageControl.appendChild(optionElement);
+        });
+
+        itemsPerPageControl.value = ITEMS_PER_PAGE;
+      }
+
+      // Handle Items Per Page Change (NOT WORK)
+      function handleItemsPerPageChange() {
+        ITEMS_PER_PAGE = parseInt(event.target.value);
+        currentPage = 1;
+        totalPages = Math.ceil(filteredData.length / ITEMS_PER_PAGE);
+        renderTable();
+        renderItemsPerPageControl();
+      }
+
+      // Search Input
+      let searchInput = document.getElementById("searchInput");
+      searchInput.addEventListener("input", (event) => {
+        filteredData = data.filter((item) => item.name.first.toLowerCase().includes(event.target.value.toLowerCase()));
+        currentPage = 1;
+        renderTable();
+        renderPagination();
+      });
+    </script>
+    <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js" integrity="sha384-Q6E9RHvbIyZFJoft+2mJbHaEWldlvI9IOYy5n3zV9zzTtmI3UksdQRVvoxMfooAo" crossorigin="anonymous"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/5.0.0/js/bootstrap.min.js" integrity="sha384-OgVRvuATP1z7JjHLkuOU7Xw704+h835Lr+6QL9UvYjZE3Ipu6Tp75j7Bh/kR0JKI" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js" integrity="sha384-w76AqPfDkMBDXo30jS1Sgez6pr3x5MlQ1ZAGC+nuZB+EYdgRZgiwxhTBTkF7CXvN" crossorigin="anonymous"></script>
+  </body>
+</html>
